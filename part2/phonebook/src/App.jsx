@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import personsServices from "./services/persons";
 
 const Button = ({ text, type }) => <button type={type}>{text}</button>;
 
@@ -54,22 +55,25 @@ const Person = ({ name, number }) => {
   if (name && number) {
     return (
       <li>
-        {name} {number}
+        {name} {number} <Button text="delete" />
       </li>
     );
   }
 };
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: "Arto Hellas", number: "040-123456", id: 1 },
-    { name: "Ada Lovelace", number: "39-44-5323523", id: 2 },
-    { name: "Dan Abramov", number: "12-43-234345", id: 3 },
-    { name: "Mary Poppendieck", number: "39-23-6423122", id: 4 },
-  ]);
+  const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [newFilter, setNewFilter] = useState("");
+
+  useEffect(() => {
+    try {
+      personsServices.getAll().then((result) => setPersons(result));
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   const handleNewName = (e) => setNewName(e.target.value);
   const handleNewNumber = (e) => setNewNumber(e.target.value);
@@ -88,7 +92,15 @@ const App = () => {
       return alert(`${newName} is already added to the phonebook`);
     }
 
-    setPersons([...persons, { name: newName, number: newNumber }]);
+    const newObject = {
+      name: newName,
+      number: newNumber,
+      id: Math.floor(Math.random(100)),
+    };
+    setPersons([...persons, newObject]);
+
+    personsServices.create(newObject);
+
     setNewName("");
     setNewNumber("");
   };
@@ -106,7 +118,11 @@ const App = () => {
         newNumber={newNumber}
       />
       <Title title="Numbers" />
-      <Persons persons={persons} newFilter={newFilter} />
+      <Persons
+        persons={persons}
+        newFilter={newFilter}
+        handleFunction={() => {}}
+      />
     </div>
   );
 };
