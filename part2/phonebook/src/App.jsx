@@ -1,8 +1,12 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
-import personsServices from "./services/persons";
+import personServices from "./services/persons";
 
-const Button = ({ text, type }) => <button type={type}>{text}</button>;
+const Button = ({ text, type, handleNewChange }) => (
+  <button onClick={handleNewChange} type={type}>
+    {text}
+  </button>
+);
 
 const Input = ({ text, value, onChange }) => {
   return (
@@ -30,37 +34,6 @@ const PersonForm = ({
 
 const Title = ({ title }) => <h2>{title}</h2>;
 
-const Persons = ({ persons, newFilter }) => {
-  const filteredList = persons.filter((person) =>
-    person.name.toLowerCase().includes(newFilter.toLocaleLowerCase())
-  );
-
-  return (
-    <div>
-      <ul style={{ padding: 0 }}>
-        {filteredList.map((item, i) => (
-          <Person
-            key={item.name + i}
-            name={item.name}
-            number={item.number}
-            id={item.id}
-          />
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-const Person = ({ name, number }) => {
-  if (name && number) {
-    return (
-      <li>
-        {name} {number} <Button text="delete" />
-      </li>
-    );
-  }
-};
-
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
@@ -69,15 +42,61 @@ const App = () => {
 
   useEffect(() => {
     try {
-      personsServices.getAll().then((result) => setPersons(result));
+      personServices.getAll().then((result) => setPersons(result));
     } catch (error) {
       console.error(error);
     }
   }, []);
 
+  const Persons = ({ persons, newFilter }) => {
+    const filteredList = persons.filter((person) =>
+      person.name.toLowerCase().includes(newFilter.toLowerCase())
+    );
+
+    return (
+      <div>
+        <ul style={{ padding: 0 }}>
+          {filteredList.map((item, i) => (
+            <Person
+              key={item.name + i}
+              name={item.name}
+              number={item.number}
+              id={item.id}
+            />
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const Person = ({ name, number, id }) => {
+    if (name && number) {
+      return (
+        <li>
+          {name} {number}{" "}
+          <Button
+            text="delete"
+            type="submit"
+            handleNewChange={() => {
+              handleDelete(id, name);
+            }}
+          />
+        </li>
+      );
+    }
+  };
+
   const handleNewName = (e) => setNewName(e.target.value);
   const handleNewNumber = (e) => setNewNumber(e.target.value);
   const handleNewFilter = (e) => setNewFilter(e.target.value);
+
+  const handleDelete = (id, name) => {
+    if (window.confirm(`Do you want to delete ${name}`)) {
+      personServices.deletePerson(id).then(() => {
+        setPersons(persons.filter((personInState) => personInState.id !== id));
+      });
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -99,7 +118,7 @@ const App = () => {
     };
     setPersons([...persons, newObject]);
 
-    personsServices.create(newObject);
+    personServices.create(newObject);
 
     setNewName("");
     setNewNumber("");
@@ -118,11 +137,7 @@ const App = () => {
         newNumber={newNumber}
       />
       <Title title="Numbers" />
-      <Persons
-        persons={persons}
-        newFilter={newFilter}
-        handleFunction={() => {}}
-      />
+      <Persons persons={persons} newFilter={newFilter} />
     </div>
   );
 };
