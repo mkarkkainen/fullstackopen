@@ -16,18 +16,20 @@ const Input = ({ text, value, onChange }) => {
   );
 };
 
-const PersonForm = ({
-  handleSubmit,
-  newName,
-  newNumber,
-  handleNewName,
-  handleNewNumber,
-}) => {
+const PersonForm = ({ addNewPerson, newPerson, handleChange }) => {
   return (
-    <form onSubmit={handleSubmit}>
-      <Input text="name" value={newName} onChange={handleNewName} />
-      <Input text="number" value={newNumber} onChange={handleNewNumber} />
-      <Button text="add" type="submit" />
+    <form onSubmit={addNewPerson}>
+      <div>
+        name:{" "}
+        <input name="name" value={newPerson.name} onChange={handleChange} />
+      </div>
+      <div>
+        number:
+        <input name="number" value={newPerson.number} onChange={handleChange} />
+      </div>
+      <div>
+        <Button text="add" type="submit" />
+      </div>
     </form>
   );
 };
@@ -35,9 +37,8 @@ const PersonForm = ({
 const Title = ({ title }) => <h2>{title}</h2>;
 
 const App = () => {
+  const [newPerson, setNewPerson] = useState({ name: "", number: "" });
   const [persons, setPersons] = useState([]);
-  const [newName, setNewName] = useState("");
-  const [newNumber, setNewNumber] = useState("");
   const [newFilter, setNewFilter] = useState("");
 
   useEffect(() => {
@@ -86,42 +87,60 @@ const App = () => {
     }
   };
 
-  const handleNewName = (e) => setNewName(e.target.value);
-  const handleNewNumber = (e) => setNewNumber(e.target.value);
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setNewPerson({ ...newPerson, [name]: value });
+  };
+
   const handleNewFilter = (e) => setNewFilter(e.target.value);
 
   const handleDelete = (id, name) => {
     if (window.confirm(`Do you want to delete ${name}`)) {
-      personServices.deletePerson(id).then(() => {
+      personServices.remove(id).then(() => {
         setPersons(persons.filter((personInState) => personInState.id !== id));
       });
     }
   };
 
-  const handleSubmit = (e) => {
+  const addNewPerson = (e) => {
     e.preventDefault();
-    if (!newName) {
+    if (!newPerson.name) {
       return alert("Name field empty!");
     }
-    if (!newNumber) {
+    if (!newPerson.number) {
       return alert("Number field empty!");
     }
-    if (JSON.stringify(persons).includes(newName)) {
-      setNewName("");
-      return alert(`${newName} is already added to the phonebook`);
+    if (JSON.stringify(persons).includes(newPerson.name)) {
+      if (
+        window.confirm(
+          "Person already in book, do you want to change their number?"
+        )
+      ) {
+        const personInDir = persons.find(
+          (person) => person.name === newPerson.name
+        );
+        personServices
+          .update(personInDir.id, newPerson)
+          .then((returnedPerson) => {
+            const updatedPersons = persons.map((person) =>
+              person.id === returnedPerson.id ? returnedPerson : person
+            );
+            setPersons(updatedPersons);
+          });
+      }
+      setNewPerson({ name: "", number: "" });
+    } else {
+      const newObject = {
+        name: newPerson.name,
+        number: newPerson.number,
+        id: Math.floor(Math.random(100)),
+      };
+      setPersons([...persons, newObject]);
+
+      personServices.create(newObject);
+
+      setNewPerson({ name: "", number: "" });
     }
-
-    const newObject = {
-      name: newName,
-      number: newNumber,
-      id: Math.floor(Math.random(100)),
-    };
-    setPersons([...persons, newObject]);
-
-    personServices.create(newObject);
-
-    setNewName("");
-    setNewNumber("");
   };
 
   return (
@@ -130,11 +149,9 @@ const App = () => {
       <Input text="filter" value={newFilter} onChange={handleNewFilter} />
       <Title title="Add new" />
       <PersonForm
-        handleSubmit={handleSubmit}
-        handleNewName={handleNewName}
-        handleNewNumber={handleNewNumber}
-        newName={newName}
-        newNumber={newNumber}
+        handleChange={handleChange}
+        addNewPerson={addNewPerson}
+        newPerson={newPerson}
       />
       <Title title="Numbers" />
       <Persons persons={persons} newFilter={newFilter} />
