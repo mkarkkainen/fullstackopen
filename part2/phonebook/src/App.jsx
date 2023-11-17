@@ -40,14 +40,29 @@ const App = () => {
   const [newPerson, setNewPerson] = useState({ name: "", number: "" });
   const [persons, setPersons] = useState([]);
   const [newFilter, setNewFilter] = useState("");
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    try {
-      personServices.getAll().then((result) => setPersons(result));
-    } catch (error) {
-      console.error(error);
-    }
+    const fetchPersons = async () => {
+      try {
+        personServices.getAll().then((result) => setPersons(result));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchPersons();
+
+    return () => {};
   }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setMessage("");
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [message]);
 
   const Persons = ({ persons, newFilter }) => {
     const filteredList = persons.filter((person) =>
@@ -98,9 +113,19 @@ const App = () => {
     if (window.confirm(`Do you want to delete ${name}`)) {
       personServices.remove(id).then(() => {
         setPersons(persons.filter((personInState) => personInState.id !== id));
+        setMessage(`Deleted ${name}`);
       });
     }
   };
+
+  function doesNameExist(inputName, entries) {
+    return entries.some((entry) => entry.name === inputName);
+  }
+
+  function getIdByName(inputName, entries) {
+    const foundEntry = entries.find((entry) => entry.name === inputName);
+    return foundEntry ? foundEntry.id : undefined;
+  }
 
   const addNewPerson = (e) => {
     e.preventDefault();
@@ -110,42 +135,57 @@ const App = () => {
     if (!newPerson.number) {
       return alert("Number field empty!");
     }
-    if (JSON.stringify(persons).includes(newPerson.name)) {
+
+    const exists = doesNameExist(newPerson.name, persons);
+    const id = getIdByName(newPerson.name, persons);
+
+    if (exists) {
       if (
         window.confirm(
-          "Person already in book, do you want to change their number?"
+          `${newPerson.name} already exists in phonebook, do you want to change their number to ${newPerson.number}?`
         )
       ) {
-        const personInDir = persons.find(
-          (person) => person.name === newPerson.name
-        );
         personServices
-          .update(personInDir.id, newPerson)
+          .update(id, newPerson)
           .then((returnedPerson) => {
             const updatedPersons = persons.map((person) =>
               person.id === returnedPerson.id ? returnedPerson : person
             );
             setPersons(updatedPersons);
-          });
+            setMessage(
+              `Updated ${newPerson.name}'s number to ${newPerson.number}`
+            );
+            setNewPerson({ name: "", number: "" });
+          })
+          .catch((err) => console.error(err));
       }
-      setNewPerson({ name: "", number: "" });
     } else {
-      const newObject = {
-        name: newPerson.name,
-        number: newPerson.number,
-        id: Math.floor(Math.random(100)),
-      };
-      setPersons([...persons, newObject]);
-
-      personServices.create(newObject);
-
-      setNewPerson({ name: "", number: "" });
+      personServices.create(newPerson).then((returnedPerson) => {
+        setMessage(`Added ${newPerson.name}`);
+        setPersons([...persons, returnedPerson]);
+        setNewPerson({ name: "", number: "" });
+      });
     }
   };
 
   return (
     <div>
-      <Title title="Search" />
+      <Title title="Phonebook" />
+      {message && (
+        <div
+          style={{
+            color: "green",
+            backgroundColor: "#d6d4ce",
+            borderRadius: "4px",
+            padding: "1rem",
+            border: "solid 3px green",
+            marginTop: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          {message}
+        </div>
+      )}
       <Input text="filter" value={newFilter} onChange={handleNewFilter} />
       <Title title="Add new" />
       <PersonForm
