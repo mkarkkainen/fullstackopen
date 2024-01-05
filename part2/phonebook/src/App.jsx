@@ -43,17 +43,7 @@ const App = () => {
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    const fetchPersons = async () => {
-      try {
-        personServices.getAll().then((result) => setPersons(result));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchPersons();
-
-    return () => {};
+    personServices.getAll().then((initialPeople) => setPersons(initialPeople));
   }, []);
 
   useEffect(() => {
@@ -63,10 +53,10 @@ const App = () => {
 
     return () => clearTimeout(timeoutId);
   }, [message]);
-
+  console.log(persons);
   const Persons = ({ persons, newFilter }) => {
     const filteredList = persons.filter((person) =>
-      person.name.toLowerCase().includes(newFilter.toLowerCase())
+      person.name.toLowerCase().includes(newFilter.toLowerCase()),
     );
 
     return (
@@ -142,18 +132,18 @@ const App = () => {
     if (exists) {
       if (
         window.confirm(
-          `${newPerson.name} already exists in phonebook, do you want to change their number to ${newPerson.number}?`
+          `${newPerson.name} already exists in phonebook, do you want to change their number to ${newPerson.number}?`,
         )
       ) {
         personServices
           .update(id, newPerson)
           .then((returnedPerson) => {
             const updatedPersons = persons.map((person) =>
-              person.id === returnedPerson.id ? returnedPerson : person
+              person.id === returnedPerson.id ? returnedPerson : person,
             );
             setPersons(updatedPersons);
             setMessage(
-              `Updated ${newPerson.name}'s number to ${newPerson.number}`
+              `Updated ${newPerson.name}'s number to ${newPerson.number}`,
             );
             setNewPerson({ name: "", number: "" });
           })
