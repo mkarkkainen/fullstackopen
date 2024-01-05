@@ -49,10 +49,6 @@ app.get("/api/persons/:id", (req, res, next) => {
     .catch((err) => next(err));
 });
 
-const morganMsg = morgan(
-  ":method :url :status :res[content-length] - :response-time ms :body",
-);
-
 app.post("/api/persons/", (req, res, next) => {
   const body = req.body;
 
@@ -68,7 +64,7 @@ app.post("/api/persons/", (req, res, next) => {
 
     person
       .save()
-      .then((result) => {
+      .then(() => {
         res.status(201).send("added");
       })
       .catch((err) => next(err));

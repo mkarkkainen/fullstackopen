@@ -39,7 +39,7 @@ if (process.argv.length > 3) {
   savePerson({
     name,
     phone,
-  }).then((result) => {
+  }).then(() => {
     console.log(`added ${name}`);
     mongoose.connection.close();
   });
