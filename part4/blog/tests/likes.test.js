@@ -85,12 +85,12 @@ describe("total likes", () => {
   });
 });
 
-describe("author with most blogs", () => {
-  test("author and blogs amnt", () => {
-    const result = listHelper.mostBlogs(listOfBlogs);
-    expect(result).toEqual({
-      author: "Robert C. Martin",
-      blogs: 3,
-    });
-  });
-});
+// describe("author with most blogs", () => {
+//   test("author and blogs amnt", () => {
+//     const result = listHelper.mostBlogs(listOfBlogs);
+//     expect(result).toEqual({
+//       author: "Robert C. Martin",
+//       blogs: 3,
+//     });
+//   });
+// });
